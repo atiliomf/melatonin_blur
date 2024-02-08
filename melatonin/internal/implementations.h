@@ -31,6 +31,10 @@
     #endif
 #elif JUCE_LINUX
     #include "../implementations/float_vector_stack_blur.h"
+#elif JUCE_ANDROID && JUCE_MODULE_AVAILABLE_renderscript_intrinsics
+    #include "renderscript_intrinsics/renderscript_intrinsics.h"
+#elif JUCE_ANDROID
+    #include "../implementations/float_vector_stack_blur.h"
 #else
   #error "Unsupported platform!"
 #endif
@@ -81,6 +85,8 @@ namespace melatonin::blur
             melatonin::stackBlur::ginSingleChannel (img, static_cast<unsigned int> (radius));
 #elif defined(MELATONIN_BLUR_IPP)
         ippVectorSingleChannel (img, radius);
+#elif JUCE_ANDROID && JUCE_MODULE_AVAILABLE_renderscript_intrinsics
+        RenderscriptIntrinsics::getInstance().blurSingleChannel (img, static_cast<unsigned int>(radius));
 #else
         melatonin::blur::juceFloatVectorSingleChannel (img, static_cast<int>(radius));
 #endif
@@ -93,6 +99,8 @@ namespace melatonin::blur
             melatonin::blur::vImageARGB (srcImage, dstImage, radius);
         else
             melatonin::stackBlur::ginARGB (dstImage, static_cast<unsigned int> (radius));
+#elif JUCE_ANDROID && JUCE_MODULE_AVAILABLE_renderscript_intrinsics
+        RenderscriptIntrinsics::getInstance().blurARGB (srcImage, dstImage, static_cast<unsigned int>(radius));
 #else
         stackBlur::ginARGB (dstImage, static_cast<unsigned int>(radius));
 #endif
