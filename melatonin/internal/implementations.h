@@ -31,8 +31,6 @@
     #endif
 #elif JUCE_LINUX
     #include "../implementations/float_vector_stack_blur.h"
-#elif JUCE_ANDROID && JUCE_MODULE_AVAILABLE_renderscript_intrinsics
-    #include "renderscript_intrinsics/renderscript_intrinsics.h"
 #elif JUCE_ANDROID
     #include "../implementations/float_vector_stack_blur.h"
 #else
