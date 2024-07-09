@@ -52,7 +52,7 @@ namespace melatonin::internal
         struct TextArrangement
         {
             juce::String text = {};
-            juce::Font font = {};
+            juce::Font font;
             juce::Rectangle<float> area = {};
             juce::Justification justification = juce::Justification::left;
 
@@ -60,7 +60,7 @@ namespace melatonin::internal
             bool operator!= (const TextArrangement& other) const;
         };
 
-        TextArrangement lastTextArrangement = {};
+        TextArrangement lastTextArrangement = { "", juce::Font (juce::FontOptions()) };
 
         void setScale (juce::Graphics& g, bool lowQuality);
         void updatePathIfNeeded (juce::Path& pathToBlur);

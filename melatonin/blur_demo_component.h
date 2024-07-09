@@ -148,14 +148,14 @@ namespace melatonin
             strokedInnerShadow.render (g, strokedInnerPath, juce::PathStrokeType (6));
 
             g.setColour (juce::Colours::white);
-            g.setFont (juce::Font (50).boldened());
+            g.setFont (juce::Font (juce::FontOptions (50)).boldened());
             textDropShadow.render (g, "drop", textBounds, juce::Justification::left);
             g.drawText ("drop", textBounds, juce::Justification::left);
 
             g.drawText ("inner", textBounds, juce::Justification::centredRight);
             textInnerShadow.render (g, "inner", textBounds.toFloat(), juce::Justification::centredRight);
 
-            g.setFont (juce::Font (16));
+            g.setFont (juce::Font (juce::FontOptions (16)));
             auto labels = juce::StringArray ("radius", "spread", "offsetX", "offsetY", "opacity");
             for (auto i = 0; i < labels.size(); ++i)
             {
@@ -164,7 +164,7 @@ namespace melatonin
             auto elapsed = juce::Time::getMillisecondCounterHiRes() - start;
 
             g.setColour (juce::Colours::white);
-            g.setFont (juce::Font (16));
+            g.setFont (juce::Font (juce::FontOptions (16)));
             g.drawText ("rendered in " + juce::String (elapsed, 3) + "ms", getLocalBounds().removeFromTop (50), juce::Justification::centred);
         }
 
@@ -267,6 +267,7 @@ namespace melatonin
             // https://codepen.io/namho/pen/jEaXra
             juce::String text = "TEXTSHADOW";
             g.fillAll (juce::Colour::fromRGB (236, 229, 218));
+            juce::Font font (juce::FontOptions ( "Arial Black", 110.f, 0 ));
             g.setFont (font.withExtraKerningFactor (-0.1f));
 
             // drop shadow renders under the text!
@@ -276,7 +277,6 @@ namespace melatonin
         }
 
     private:
-        juce::Font font { "Arial Black", 110.f, 0 };
         melatonin::DropShadow dropShadow {
             { juce::Colour::fromRGB (196, 181, 157), 12, { 0, 13 } },
             { juce::Colours::white, 1, { 0, -2 } }
