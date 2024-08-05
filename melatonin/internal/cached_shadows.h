@@ -59,8 +59,11 @@ namespace melatonin::internal
             bool operator== (const TextArrangement& other) const;
             bool operator!= (const TextArrangement& other) const;
         };
-
+#if JUCE_MAJOR_VERSION < 8
+        TextArrangement lastTextArrangement = { "", juce::Font() };
+#else
         TextArrangement lastTextArrangement = { "", juce::Font (juce::FontOptions()) };
+#endif
 
         void setScale (juce::Graphics& g, bool lowQuality);
         void updatePathIfNeeded (juce::Path& pathToBlur);
