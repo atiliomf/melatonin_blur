@@ -20,4 +20,3 @@ END_JUCE_MODULE_DECLARATION
 
 #include "melatonin/cached_blur.h"
 #include "melatonin/shadows.h"
-//#include "melatonin/blur_demo_component.h"
