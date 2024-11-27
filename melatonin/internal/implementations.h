@@ -29,7 +29,7 @@
     #else
         #include "../implementations/float_vector_stack_blur.h"
     #endif
-#elif JUCE_LINUX
+#elif JUCE_LINUX || JUCE_BSD || JUCE_ANDROID
     #include "../implementations/float_vector_stack_blur.h"
 #elif JUCE_ANDROID
     #include "../implementations/float_vector_stack_blur.h"
@@ -74,7 +74,7 @@ namespace melatonin::internal
 // Don't use these directly, use melatonin::CachedBlur!
 namespace melatonin::blur
 {
-    static void singleChannel (juce::Image& img, size_t radius)
+    [[maybe_unused]] static inline void singleChannel (juce::Image& img, size_t radius)
     {
 #if MELATONIN_BLUR_VIMAGE
         if (internal::vImageSingleChannelAvailable())
@@ -86,11 +86,11 @@ namespace melatonin::blur
 #elif JUCE_ANDROID && JUCE_MODULE_AVAILABLE_renderscript_intrinsics
         RenderscriptIntrinsics::getInstance().blurSingleChannel (img, static_cast<unsigned int>(radius));
 #else
-        melatonin::blur::juceFloatVectorSingleChannel (img, static_cast<int>(radius));
+        melatonin::blur::juceFloatVectorSingleChannel (img, radius);
 #endif
     }
 
-    static void argb ([[maybe_unused]] juce::Image& srcImage, juce::Image& dstImage, size_t radius)
+    [[maybe_unused]] static inline void argb ([[maybe_unused]] juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
 #if MELATONIN_BLUR_VIMAGE_MACOS14
         if (internal::vImageARGBAvailable())

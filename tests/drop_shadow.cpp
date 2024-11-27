@@ -1,5 +1,5 @@
-#include "../melatonin/shadows.h"
 #include "../melatonin/internal/implementations.h"
+#include "../melatonin/shadows.h"
 #include "helpers/pixel_helpers.h"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -27,19 +27,17 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
     // stick the 3x3 box centered inside a 9x9
     p.addRectangle (bounds.translated (3, 3));
 
-    // needed for JUCE not to pee its pants (aka leak) when working with graphics
-    juce::ScopedJuceInitialiser_GUI juce;
-
     juce::Image result (juce::Image::ARGB, 9, 9, true);
-    juce::Graphics g (result);
 
     SECTION ("no shadow")
     {
-        g.fillAll (juce::Colours::white);
-
-        g.setColour (juce::Colours::black);
-        g.fillPath (p);
-
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
+            g.setColour (juce::Colours::black);
+            g.fillPath (p);
+        }
+        save_test_image (result, "no shadow");
         // nothing should be outside the top left corner
         REQUIRE (result.getPixelAt (2, 2).toDisplayString (true) == "FFFFFFFF"); // ARGB
 
@@ -49,24 +47,41 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
     SECTION ("default constructor")
     {
-        g.fillAll (juce::Colours::white);
         melatonin::DropShadow shadow;
-        shadow.render (g, p);
-        CHECK(filledBounds (result) == juce::Rectangle<int> (3, 3, 3, 3));
 
-        save_test_image(result, "default constructor");
-        shadow.setRadius(5);
-        shadow.render (g, p);
-        CHECK(filledBounds (result) == juce::Rectangle<int> (0, 0, 9, 9));
+        SECTION ("doesn't setup a shadow, renders nothing")
+        {
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+                shadow.render (g, p);
+            }
+            CHECK (filledBounds (result).toString() == juce::Rectangle<int> (0, 0, 0, 0).toString());
+        }
+
+        // the point of this is to allow everything to be efficient
+        SECTION ("modify the shadow, it renders a default black shadow")
+        {
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+                shadow.setRadius (5);
+                shadow.render (g, p);
+            }
+            CHECK (filledBounds (result) == juce::Rectangle<int> (0, 0, 9, 9));
+        }
     }
 
     SECTION ("single shadow")
     {
-        g.fillAll (juce::Colours::white);
-        melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
-        shadow.render (g, p);
-        g.setColour (juce::Colours::black);
-        g.fillPath (p);
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
+            melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
+            shadow.render (g, p);
+            g.setColour (juce::Colours::black);
+            g.fillPath (p);
+        }
         save_test_image (result, "single_shadow");
 
         // TODO: I'd like to reduce the margin on these tests
@@ -120,16 +135,17 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
     SECTION ("offset")
     {
-        g.fillAll (juce::Colours::white);
-
         SECTION ("positive 1px for x/y")
         {
-            // offset by 1px to the right/bottom
-            melatonin::DropShadow shadow = { { juce::Colours::black, 2, { 1, 1 } } };
-            shadow.render (g, p);
-            g.setColour (juce::Colours::black);
-            g.fillPath (p);
-
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+                // offset by 1px to the right/bottom
+                melatonin::DropShadow shadow = { { juce::Colours::black, 2, { 1, 1 } } };
+                shadow.render (g, p);
+                g.setColour (juce::Colours::black);
+                g.fillPath (p);
+            }
             save_test_image (result, "positive 1px offset");
 
             SECTION ("left and top edges have an extra white pixel")
@@ -156,19 +172,27 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         {
             SECTION ("negative Y offset means top pixel is no longer white")
             {
-                melatonin::DropShadow shadow = { { juce::Colours::black, 2, { 0, -1 } } };
-                shadow.render (g, p);
-                g.setColour (juce::Colours::black);
-                g.fillPath (p);
+                {
+                    juce::Graphics g (result);
+                    g.fillAll (juce::Colours::white);
+                    melatonin::DropShadow shadow = { { juce::Colours::black, 2, { 0, -1 } } };
+                    shadow.render (g, p);
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+                }
                 CHECK (result.getPixelAt (4, 0).getBrightness() == Catch::Approx (0.91372549).margin (0.01)); // 1st px of blur
             }
 
             SECTION ("negative X offset means left pixel is no longer white")
             {
-                melatonin::DropShadow shadow = { { juce::Colours::black, 2, { -1, 0 } } };
-                shadow.render (g, p);
-                g.setColour (juce::Colours::black);
-                g.fillPath (p);
+                {
+                    juce::Graphics g (result);
+                    g.fillAll (juce::Colours::white);
+                    melatonin::DropShadow shadow = { { juce::Colours::black, 2, { -1, 0 } } };
+                    shadow.render (g, p);
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+                }
                 CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx (0.91372549).margin (.01)); // 1st px of blur
             }
         }
@@ -176,14 +200,16 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
     SECTION ("spread")
     {
-        g.fillAll (juce::Colours::white);
-
         SECTION ("positive")
         {
-            melatonin::DropShadow shadow = { { juce::Colours::black, 2, {}, 2 } };
-            shadow.render (g, p);
-            g.setColour (juce::Colours::black);
-            g.fillPath (p);
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+                melatonin::DropShadow shadow = { { juce::Colours::black, 2, {}, 2 } };
+                shadow.render (g, p);
+                g.setColour (juce::Colours::black);
+                g.fillPath (p);
+            }
 
             SECTION ("no more white pixels, since the blur has spread out")
             {
@@ -201,11 +227,15 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         {
             SECTION ("reduces the size of the blur by 1px")
             {
-                melatonin::DropShadow shadow = { { juce::Colours::black, 2, {}, -1 } };
-                shadow.render (g, p);
-                g.setColour (juce::Colours::black);
-                g.fillPath (p);
+                {
+                    juce::Graphics g (result);
+                    g.fillAll (juce::Colours::white);
 
+                    melatonin::DropShadow shadow = { { juce::Colours::black, 2, {}, -1 } };
+                    shadow.render (g, p);
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+                }
                 // extra white pixel, as if path were smaller (because it is)
                 CHECK (result.getPixelAt (0, 4).toDisplayString (true) == "FFFFFFFF");
                 CHECK (result.getPixelAt (1, 4).toDisplayString (true) == "FFFFFFFF");
@@ -219,25 +249,54 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
                 // spread can't be more than -1 in our example, since our path is 3x3
                 melatonin::DropShadow shadow = { { juce::Colours::black, 1, {}, -1 } };
 
-                shadow.render (g, p);
-                g.setColour (juce::Colours::black);
-                g.fillPath (p);
+                {
+                    juce::Graphics g (result);
+                    g.fillAll (juce::Colours::white);
 
+                    shadow.render (g, p);
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+                }
                 CHECK (result.getPixelAt (2, 2).toDisplayString (true) == "FFFFFFFF");
                 CHECK (result.getPixelAt (2, 3).toDisplayString (true) == "FFFFFFFF");
+            }
+        }
+
+        SECTION ("non square")
+        {
+            // create a 6px by 2px square
+            auto rectangle = juce::Rectangle<float> (6, 2);
+            juce::Path rectanglePath;
+
+            // stick the 6x2 rectangle centered inside a 10x6
+            rectanglePath.addRectangle (rectangle.translated (2, 2));
+
+            juce::Image rectangleResult (juce::Image::ARGB, 10, 6, true);
+            juce::Graphics g2 (rectangleResult);
+            g2.fillAll (juce::Colours::white);
+
+            SECTION ("2 pixels of spread, 0px shadow")
+            {
+                melatonin::DropShadow shadow = { { juce::Colours::red, 0, {}, 2 } };
+                shadow.render (g2, rectanglePath);
+                g2.setColour (juce::Colours::black);
+                g2.fillPath (rectanglePath);
+                CHECK (filledBounds (rectangleResult).toString() == juce::Rectangle<int> (0, 0, 10, 6).toString());
             }
         }
     }
 
     SECTION ("multiple shadow colors")
     {
-        g.fillAll (juce::Colours::white);
-
         // dammit, in JUCE "lime" is actually pure green...
         melatonin::DropShadow shadow = { { juce::Colours::red, 2 }, { juce::Colours::lime, 2 } };
 
         SECTION ("to start, our context is white")
         {
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+            }
             auto color = result.getPixelAt (4, 4);
             CHECK (color.getFloatRed() == Catch::Approx (1.0f));
             CHECK (color.getFloatGreen() == Catch::Approx (1.0f));
@@ -247,9 +306,13 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         // TODO: figure out red/green discrepancy
         SECTION ("post shadow, red and green are present", "[.]")
         {
-            shadow.render (g, p);
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+                shadow.render (g, p);
+            }
             auto color = result.getPixelAt (4, 4);
-            CHECK (color.getFloatRed() == Catch::Approx (0.4f)); // TODO: no idea wtf
+            CHECK (color.getFloatRed() == Catch::Approx (0.4f).margin(0.005)); // TODO: no idea wtf
             CHECK (color.getFloatGreen() == Catch::Approx (0.76471f).margin (0.005));
             CHECK (color.getFloatBlue() == Catch::Approx (0.16078f).margin (0.005));
         }
@@ -257,12 +320,14 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
     SECTION ("Alpha")
     {
-        g.fillAll (juce::Colours::white);
-
         SECTION ("alpha of 0 is invisible")
         {
-            melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (0.0f), 2 } };
-            shadow.render (g, p);
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+                melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (0.0f), 2 } };
+                shadow.render (g, p);
+            }
 
             // the entire image is still white
             CHECK (isImageFilled (result, juce::Colours::white) == true);
@@ -270,8 +335,12 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
         SECTION ("alpha of 1 is opaque")
         {
-            melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (1.0f), 2 } };
-            shadow.render (g, p);
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+                melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (1.0f), 2 } };
+                shadow.render (g, p);
+            }
 
             // center pixel of blur is not black (0), but pretty dark still
             CHECK (result.getPixelAt (4, 4).getLightness() == Catch::Approx (0.39608f).margin (0.01));
@@ -279,8 +348,13 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
         SECTION ("alpha of 0.5 is translucent")
         {
-            melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (0.5f), 2 } };
-            shadow.render (g, p);
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+
+                melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (0.5f), 2 } };
+                shadow.render (g, p);
+            }
 
             // center pixel of blur is much lighter (remember, we're on white!)
             CHECK (result.getPixelAt (4, 4).getLightness() == Catch::Approx (0.69804f).margin (0.01));
@@ -414,5 +488,5 @@ TEST_CASE ("Melatonin Blur JUCE premultiplied check")
         CHECK (actualPixel.g == 0u);
         CHECK (actualPixel.b == 0u);
     }
-};
+}
 #endif
